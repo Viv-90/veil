@@ -1,4 +1,4 @@
-#![no_std]
+﻿#![no_std]
 use soroban_sdk::{
     contract, contractimpl, contracterror,
     Env, Address, Bytes, BytesN, Vec, Symbol, Val,
@@ -34,11 +34,11 @@ pub struct InvisibleWallet;
 impl InvisibleWallet {
     /// Initialise the wallet with its first signer and domain-binding parameters.
     ///
-    /// `rp_id`   — the WebAuthn relying party ID (e.g. `"localhost"` for dev,
+    /// `rp_id`   â€” the WebAuthn relying party ID (e.g. `"localhost"` for dev,
     ///             `"veil.app"` for production). Must match the domain that
-    ///             serves the frontend. Keep it configurable — do not hardcode.
+    ///             serves the frontend. Keep it configurable â€” do not hardcode.
     ///
-    /// `origin`  — the exact WebAuthn origin (e.g. `"https://veil.app"`).
+    /// `origin`  â€” the exact WebAuthn origin (e.g. `"https://veil.app"`).
     ///             Must match the `origin` field the browser embeds in every
     ///             clientDataJSON for this deployment.
     pub fn init(
@@ -74,17 +74,17 @@ impl InvisibleWallet {
     /// Called by the Soroban runtime to authorize a transaction.
     ///
     /// The `signature` Val must encode a Vec<Val> with 4 elements:
-    ///   [0] BytesN<65>  — uncompressed P-256 public key (0x04 || x || y)
-    ///   [1] Bytes       — WebAuthn authenticatorData
-    ///   [2] Bytes       — WebAuthn clientDataJSON (must contain base64url(signature_payload) as challenge)
-    ///   [3] BytesN<64>  — raw P-256 ECDSA signature (r || s)
+    ///   [0] BytesN<65>  â€” uncompressed P-256 public key (0x04 || x || y)
+    ///   [1] Bytes       â€” WebAuthn authenticatorData
+    ///   [2] Bytes       â€” WebAuthn clientDataJSON (must contain base64url(signature_payload) as challenge)
+    ///   [3] BytesN<64>  â€” raw P-256 ECDSA signature (r || s)
     ///
     /// Verification order:
     ///   1. Parse and validate signature format
     ///   2. Check signer is registered
     ///   3. Verify ECDSA signature + challenge binding  (`verify_webauthn`)
-    ///   4. Verify rpIdHash binding                    (`verify_rp_id`)    → RpIdMismatch
-    ///   5. Verify origin binding                      (`verify_origin`)   → OriginMismatch
+    ///   4. Verify rpIdHash binding                    (`verify_rp_id`)    â†’ RpIdMismatch
+    ///   5. Verify origin binding                      (`verify_origin`)   â†’ OriginMismatch
     ///
     /// Steps 4 and 5 run after step 3 so that a bad domain does not produce
     /// a faster failure path than a bad signature (timing side-channel).
@@ -119,7 +119,7 @@ impl InvisibleWallet {
             return Err(WalletError::SignerNotAuthorized);
         }
 
-        // Step 3 — ECDSA + challenge verification.
+        // Step 3 â€” ECDSA + challenge verification.
         // Clone auth_data and client_data_json so they remain available for
         // the domain-binding checks below.
         auth::verify_webauthn(
@@ -131,12 +131,12 @@ impl InvisibleWallet {
             sig_bytes,
         )?;
 
-        // Step 4 — RP ID binding.
+        // Step 4 â€” RP ID binding.
         // Ensures auth_data[0..32] == SHA-256(stored rp_id).
         let rp_id = storage::get_rp_id(&env).ok_or(WalletError::RpIdMismatch)?;
         auth::verify_rp_id(&rp_id, &auth_data)?;
 
-        // Step 5 — Origin binding.
+        // Step 5 â€” Origin binding.
         // Ensures the "origin" field in clientDataJSON matches the stored origin.
         let origin = storage::get_origin(&env).ok_or(WalletError::OriginMismatch)?;
         auth::verify_origin(&client_data_json, &origin)?;
@@ -238,7 +238,7 @@ mod test {
         b
     }
 
-    // ── Existing tests (updated to pass rp_id + origin to init) ──────────────
+    // â”€â”€ Existing tests (updated to pass rp_id + origin to init) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn test_init_registers_signer() {
@@ -322,7 +322,7 @@ mod test {
         let (auth_data_raw, challenge_b64, sig_bytes) =
             make_webauthn_fixture(&signing_key, &payload, b"localhost");
 
-        // Pass a different payload — challenge won't match
+        // Pass a different payload â€” challenge won't match
         let wrong_payload = [8u8; 32];
 
         let result = auth::verify_webauthn(
@@ -359,7 +359,7 @@ mod test {
         assert_eq!(result, Err(WalletError::SignatureVerificationFailed));
     }
 
-    // ── New tests: domain binding ─────────────────────────────────────────────
+    // â”€â”€ New tests: domain binding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// RpIdMismatch: auth_data[0..32] is SHA-256("localhost") but we store "veil.app".
     #[test]
@@ -375,7 +375,7 @@ mod test {
         let mut auth_data = [0u8; 37];
         auth_data[..32].copy_from_slice(&rp_id_hash);
 
-        // But stored rp_id is "veil.app" — different domain
+        // But stored rp_id is "veil.app" â€” different domain
         let stored_rp_id = bytes_from_str(&env, "veil.app");
 
         let auth_data_bytes = {
@@ -437,7 +437,7 @@ mod test {
         let challenge_b64 = *b"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc";
         let client_data_json = build_client_data_json(&env, &challenge_b64);
 
-        // clientDataJSON has origin "https://test.example" — store the same
+        // clientDataJSON has origin "https://test.example" â€” store the same
         let stored_origin = bytes_from_str(&env, "https://test.example");
 
         let result = auth::verify_origin(&client_data_json, &stored_origin);
