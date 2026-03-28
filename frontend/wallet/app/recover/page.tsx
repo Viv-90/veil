@@ -31,7 +31,7 @@ export default function RecoverPage() {
       if (!result?.walletAddress) throw new Error('Could not derive wallet address from passkey')
 
       const signerKeypair = Keypair.random()
-      sessionStorage.setItem('veil_address', result.walletAddress)
+      sessionStorage.setItem('invisible_wallet_address', result.walletAddress)
       sessionStorage.setItem('veil_signer_secret', signerKeypair.secret())
 
       setStep('done')

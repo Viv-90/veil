@@ -14,6 +14,9 @@ const TESTNET_USDC = {
   issuer: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5'
 }
 
+const horizonUrl = 'https://horizon-testnet.stellar.org'
+const server = new Server(horizonUrl)
+
 type Step = 'form' | 'confirm' | 'swapping' | 'done' | 'error'
 
 interface StellarAsset {
@@ -41,12 +44,9 @@ export default function SwapPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
 
-  const horizonUrl = 'https://horizon-testnet.stellar.org'
-  const server = new Server(horizonUrl)
-
   // ── Load session ──
   useEffect(() => {
-    const addr = sessionStorage.getItem('veil_address')
+    const addr = sessionStorage.getItem('invisible_wallet_address')
     if (!addr) {
       router.replace('/')
       return
@@ -123,7 +123,9 @@ export default function SwapPage() {
     try {
       const signerSecret = sessionStorage.getItem('veil_signer_secret')!
       const signerKeypair = Keypair.fromSecret(signerSecret)
-      const account = await server.loadAccount(walletAddress!)
+      
+      // FIX Blocker 1: Load the fee-payer (signer) account, not the contract address
+      const account = await server.loadAccount(signerKeypair.publicKey())
 
       const source = (sourceAsset!.code === 'XLM' || !sourceAsset!.issuer) ? Asset.native() : new Asset(sourceAsset!.code, sourceAsset!.issuer!)
       const dest = (destAsset.code === 'XLM' || !destAsset.issuer) ? Asset.native() : new Asset(destAsset.code, destAsset.issuer!)
@@ -196,7 +198,7 @@ export default function SwapPage() {
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <select 
-                  style={{ background: 'var(--surface-md)', border: 'none', color: 'white', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
+                  style={{ background: 'var(--surface-md)', border: 'none', color: 'var(--off-white)', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
                   value={sourceAsset?.code || ''}
                   onChange={(e) => setSourceAsset(sourceBalances.find(b => b.code === e.target.value) || null)}
                 >
@@ -215,7 +217,7 @@ export default function SwapPage() {
 
             {/* Down Arrow */}
             <div style={{ display: 'flex', justifyContent: 'center', margin: '-0.5rem 0' }}>
-              <div style={{ background: 'var(--surface-md)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px solid var(--background)' }}>
+              <div style={{ background: 'var(--surface-md)', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px solid var(--near-black)' }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M8 3v10M4 9l4 4 4-4" stroke="var(--gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -231,7 +233,7 @@ export default function SwapPage() {
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <select 
-                  style={{ background: 'var(--surface-md)', border: 'none', color: 'white', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
+                  style={{ background: 'var(--surface-md)', border: 'none', color: 'var(--off-white)', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
                   value={destAsset.code}
                   onChange={(e) => setDestAsset(e.target.value === 'XLM' ? { code: 'XLM', balance: '0' } : { code: 'USDC', issuer: TESTNET_USDC.issuer, balance: '0' })}
                 >
@@ -254,7 +256,7 @@ export default function SwapPage() {
             )}
 
             {errorMsg && (
-              <div className="card" style={{ background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.1)' }}>
+              <div className="card" style={{ background: 'rgba(0,191,174,0.05)', border: '1px solid rgba(0,191,174,0.1)' }}>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--teal)', textAlign: 'center' }}>{errorMsg}</p>
               </div>
             )}
@@ -328,11 +330,10 @@ export default function SwapPage() {
         )}
 
         {step === 'error' && (
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'center' }}>
-            <div style={{ color: 'var(--teal)', fontSize: '2.5rem' }}>!</div>
-            <div>
-              <p style={{ fontWeight: 500 }}>Swap failed</p>
-              <p style={{ fontSize: '0.8125rem', color: 'rgba(246,247,248,0.4)', marginTop: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="card" style={{ textAlign: 'center', background: 'rgba(0,191,174,0.05)', border: '1px solid rgba(0,191,174,0.1)' }}>
+              <p style={{ fontWeight: 500, marginBottom: '0.5rem', color: 'var(--teal)' }}>Swap failed</p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--teal)' }}>
                 {errorMsg}
               </p>
             </div>

@@ -20,7 +20,7 @@ export default function SendPage() {
   const [showPicker, setShowPicker] = useState(false)
 
   useEffect(() => {
-    const addr = sessionStorage.getItem('veil_address')
+    const addr = sessionStorage.getItem('invisible_wallet_address')
     if (!addr) router.replace('/')
   }, [router])
 
@@ -34,7 +34,7 @@ export default function SendPage() {
     setStep('signing')
     setErrorMsg(null)
     try {
-      const sourceAddress = sessionStorage.getItem('veil_address')!
+      const sourceAddress = sessionStorage.getItem('invisible_wallet_address')!
       const signerSecret = sessionStorage.getItem('veil_signer_secret')!
       const signerKeypair = Keypair.fromSecret(signerSecret)
 
